@@ -4,17 +4,19 @@ document.querySelector('#rulesBtn').onclick=()=>dialog.showModal();
 document.querySelector('#closeRules').onclick=()=>dialog.close();
 let room=new URLSearchParams(location.search).get('room')?.toUpperCase()||'',state=null,selected={open:'',sealed:''};
 const cloud=window.GAME_CLOUD_CONFIG;
+const signupRedirect=!!(cloud&&/(?:^|[&#])type=signup(?:&|$)/.test(location.hash));
 if(cloud&&location.hash&&/(?:access_token|refresh_token|type=signup)/.test(location.hash))history.replaceState({},'',location.pathname+location.search);
 let session=null;
 if(cloud){try{session=JSON.parse(localStorage.getItem('treasure:session')||'null');}catch{localStorage.removeItem('treasure:session');}}
 let refreshPromise=null;
+let authMode='login',authEmail='',authFeedback=signupRedirect?{type:'success',text:'邮箱验证链接已打开。现在可以用邮箱和密码登录。'}:null;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const token=()=>localStorage.getItem('treasure:'+room)||'';
 function notice(s){toast.textContent=s;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),3500);}
 function saveSession(value){session=value; if(cloud){if(value)localStorage.setItem('treasure:session',JSON.stringify(value));else localStorage.removeItem('treasure:session');} renderAccount();}
 async function auth(path,data){
  const r=await fetch(`${cloud.url}/auth/v1/${path}`,{method:'POST',headers:{apikey:cloud.key,'Content-Type':'application/json'},body:JSON.stringify(data)});
- const x=await r.json();if(!r.ok)throw Error(x.msg||x.error_description||x.message||'账户操作失败');return x;
+ let x;try{x=await r.json();}catch{throw Error('账号服务暂时不可用，请稍后重试。');}if(!r.ok)throw Error(x.msg||x.error_description||x.message||x.error||'账户操作失败');return x;
 }
 async function ensureSession(){
  if(!cloud||!session)return session;
@@ -24,7 +26,11 @@ async function ensureSession(){
  }).catch(()=>{saveSession(null);return null;}).finally(()=>{refreshPromise=null;});
  return refreshPromise;
 }
-function authForms(){return `<div class="home-grid auth-grid"><form id="signup" class="panel"><h2>注册玩家账号</h2><label>邮箱<input type="email" name="email" required autocomplete="email"></label><label>密码<input type="password" name="password" required minlength="6" autocomplete="new-password"></label><button class="primary">注册</button><p class="hint">注册后请打开验证邮件中的链接，再返回登录。</p></form><form id="login" class="panel"><h2>已有账号登录</h2><label>邮箱<input type="email" name="email" required autocomplete="email"></label><label>密码<input type="password" name="password" required autocomplete="current-password"></label><button>登录</button></form></div>`;}
+const eyeIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m4 20 16-16"/></svg>';
+function passwordField(id,label,autocomplete){return `<div class="auth-field"><label for="${id}">${label}</label><div class="auth-password"><input id="${id}" type="password" name="${id==='confirmPassword'?'confirmPassword':'password'}" required ${id==='password'&&authMode==='signup'?'minlength="6"':''} autocomplete="${autocomplete}"><button type="button" class="password-toggle" data-toggle-password aria-label="显示${label}" aria-pressed="false" title="显示${label}">${eyeIcon}</button></div></div>`;}
+function authForms(){const signup=authMode==='signup';return `<section class="panel auth-panel" aria-label="玩家账号"><div class="auth-switch" aria-label="切换账号操作"><button type="button" data-auth-mode="login" class="${signup?'':'active'}" aria-pressed="${!signup}">登录</button><button type="button" data-auth-mode="signup" class="${signup?'active':''}" aria-pressed="${signup}">注册</button></div><h2>${signup?'创建玩家账号':'登录玩家账号'}</h2><p class="auth-intro">${signup?'注册后按邮件提示验证账号，再回来登录。':'登录后即可创建房间，或加入朋友的拍卖。'}</p><form id="${signup?'signup':'login'}" class="auth-form"><div class="auth-field"><label for="authEmail">邮箱</label><input id="authEmail" type="email" name="email" value="${esc(authEmail)}" required autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" placeholder="name@example.com"></div>${passwordField('password','密码',signup?'new-password':'current-password')}${signup?`${passwordField('confirmPassword','确认密码','new-password')}<p class="auth-help">密码至少 6 位，建议使用更长且不易猜的组合。</p>`:''}<div class="auth-feedback ${authFeedback?.type||''}" role="${authFeedback?.type==='error'?'alert':'status'}" ${authFeedback?'':'hidden'}>${authFeedback?esc(authFeedback.text):''}</div><button type="submit" class="primary auth-submit">${signup?'注册并发送验证邮件':'登录并继续'}</button></form><p class="auth-foot">${signup?'已有账号？点击上方“登录”。':'还没有账号？点击上方“注册”。'}</p></section>`;}
+function setAuthFeedback(text,type='error'){authFeedback=text?{text,type}:null;const el=main.querySelector('.auth-feedback');if(el){el.hidden=!text;el.className=`auth-feedback ${text?type:''}`;el.setAttribute('role',type==='error'?'alert':'status');el.textContent=text||'';}}
+function friendlyAuthError(error){const message=String(error?.message||error||'账户操作失败');if(/invalid login credentials/i.test(message))return '邮箱或密码不正确，请检查后重试。';if(/email not confirmed/i.test(message))return '邮箱尚未验证，请先打开验证邮件中的链接。';if(/already registered|user already exists/i.test(message))return '这个邮箱已注册，请切换到登录。';if(/rate limit|too many requests/i.test(message))return '操作过于频繁，请稍后再试。';if(/failed to fetch|network/i.test(message))return '网络连接失败，请检查网络后重试。';return message;}
 function renderAccount(){const el=document.querySelector('#account');if(!cloud){el.textContent='本地游戏';return;}el.innerHTML=session?`<span class="account-email">${esc(session.email)}</span> <button id="logout" class="ghost">退出</button>`:'<span class="account-email">云端对战 · 请登录</span>';}
 async function api(path,data){
  const s=await ensureSession();
@@ -34,14 +40,23 @@ async function api(path,data){
  const r=await fetch(target,{method:data?'POST':'GET',headers,body:data?JSON.stringify(data):undefined});
  const x=await r.json();if(!r.ok)throw Error(x.error||'请求失败');return x;
 }
-async function refresh(){if(!room){render();return;}try{const editing=main.contains(document.activeElement)&&['INPUT','SELECT'].includes(document.activeElement.tagName),previous=state?.phase;state=await api(`/api/room/${room}${cloud?'':`?token=${encodeURIComponent(token())}`}`);if(!editing||state.phase!==previous)render();}catch(e){state=null;main.innerHTML=`<section class="panel narrow"><h1>房间暂时不可用</h1><p>${esc(e.message)}</p><a href="./">返回首页</a></section>`;}}
-async function send(data){try{state=await api(`/api/room/${room}/act`,cloud?data:{...data,token:token()});selected={open:'',sealed:''};render();}catch(e){notice(e.message);}}
+async function refresh(){if(!room){render();return;}try{const active=document.activeElement,authForm=main.querySelector('.auth-form'),authDraft=!!authForm&&([...authForm.querySelectorAll('input[type="password"]')].some(input=>input.value)||authForm.contains(active)),editing=main.contains(active)&&['INPUT','SELECT'].includes(active.tagName)||authDraft,previous=state?.phase;state=await api(`/api/room/${room}${cloud?'':`?token=${encodeURIComponent(token())}`}`);if(!editing||state.phase!==previous)render();}catch(e){state=null;main.innerHTML=`<section class="panel narrow"><h1>房间暂时不可用</h1><p>${esc(e.message)}</p><a href="./">返回首页</a></section>`;}}
+let actionPending=false;
+async function send(data){
+ if(actionPending)return;
+ actionPending=true;
+ const buttons=[...main.querySelectorAll('[data-act]')];
+ buttons.forEach(button=>button.disabled=true);
+ try{state=await api(`/api/room/${room}/act`,cloud?data:{...data,token:token()});selected={open:'',sealed:''};render();}
+ catch(e){notice(e.message);}
+ finally{actionPending=false;buttons.forEach(button=>button.disabled=false);}
+}
 const who=id=>state?.players.find(p=>p.id===id)?.name||'藏家';
 const stars=n=>'★'.repeat(n);
 function card(c,extra=''){return `<div class="card ${c.red?'red':''} ${extra}" data-card="${esc(c.id)}"><div class="card-top"><span>${esc(c.era)}</span><span>${stars(c.star)}</span></div><div class="card-mark">${esc(c.era.slice(0,1))}</div><strong>${esc(c.name)}</strong><div class="card-foot"><span>${c.red?'传奇 · 红卡':'藏品'}</span><b>${c.base} 金</b></div><small class="card-id">编号 ${esc(c.id)}</small></div>`;}
 function button(label,action,cls=''){return `<button class="${cls}" data-act="${action}">${label}</button>`;}
 function phaseName(phase){return ({lobby:'等待入席',select:'主持人选品',open:'明拍竞价',sealed:'暗拍报价','secondary-choice':'二次交易','swap-response':'等待换卡回应',sell:'出售藏品','turn-end':'本回合结束',finished:'终局结算'})[phase]||phase;}
-function renderHome(){renderAccount();main.innerHTML=`<section class="welcome"><div class="eyebrow">一场关于眼光与取舍的拍卖</div><h1>千年藏珍</h1><p>可与朋友联机，也可添加机器人独自开局。竞拍九大时代的藏品，凑齐套组，警惕红卡。</p>${cloud&&!session?authForms():''}<div class="home-grid">${!cloud||session?`<form id="create" class="panel"><h2>开启新拍卖</h2><label>你的称呼<input name="name" maxlength="16" placeholder="例如：老王" required></label><button class="primary">创建房间</button></form>`:''}<form id="enter" class="panel"><h2>加入已有房间</h2><label>六位房间码<input name="room" maxlength="6" placeholder="例如：A1B2C3" required></label><button>查看房间</button></form></div><p class="hint">总席位 3–6 位 · 每位主持 3 回合 · 支持单人对战机器人</p></section>`;}
+function renderHome(){renderAccount();main.innerHTML=`<section class="welcome ${cloud&&!session?'auth-welcome':''}"><div class="eyebrow">一场关于眼光与取舍的拍卖</div><h1>千年藏珍</h1><p>可与朋友联机，也可添加机器人独自开局。竞拍九大时代的藏品，凑齐套组，警惕红卡。</p>${cloud&&!session?authForms():''}<div class="home-grid">${!cloud||session?`<form id="create" class="panel"><h2>开启新拍卖</h2><label>你的称呼<input name="name" maxlength="16" placeholder="例如：老王" required></label><button class="primary">创建房间</button></form>`:''}<form id="enter" class="panel"><h2>加入已有房间</h2><label>六位房间码<input name="room" maxlength="6" placeholder="例如：A1B2C3" required></label><button>查看房间</button></form></div><p class="hint">总席位 3–6 位 · 每位主持 3 回合 · 支持单人对战机器人</p></section>`;}
 function render(){if(!room){renderHome();return;}if(!state)return;
  renderAccount();
  const me=state.me,host=state.host===me?.id,phase=state.phase;
@@ -67,23 +82,27 @@ function renderAction(){const s=state,m=s.me,h=s.host===m?.id,a=s.auction;
  return '';
 }
 main.addEventListener('submit',async e=>{e.preventDefault();const f=e.target;if(f.id==='signup'||f.id==='login'){
-  if(!cloud)return;const data=Object.fromEntries(new FormData(f));
+  if(!cloud)return;const fields=new FormData(f),data={email:String(fields.get('email')||'').trim().toLowerCase(),password:String(fields.get('password')||'')};authEmail=data.email;
+  if(f.id==='signup'&&data.password!==String(fields.get('confirmPassword')||'')){setAuthFeedback('两次输入的密码不一致，请重新确认。');f.querySelector('#confirmPassword').focus();return;}
+  const submit=f.querySelector('[type="submit"]'),label=submit.textContent;submit.disabled=true;submit.textContent=f.id==='signup'?'正在注册…':'正在登录…';f.setAttribute('aria-busy','true');setAuthFeedback(null);
   try{if(f.id==='signup'){
    const x=await auth(`signup?redirect_to=${encodeURIComponent(location.origin+location.pathname)}`,data);
    if(x.access_token&&x.refresh_token){
     saveSession({access_token:x.access_token,refresh_token:x.refresh_token,expiresAt:Date.now()+x.expires_in*1000,email:x.user?.email||data.email});
     notice('注册成功，已登录');await refresh();
-   }else notice('注册申请已提交；收到验证邮件后请点击链接再登录');
+   }else{authMode='login';authFeedback={type:'success',text:'注册申请已提交。请查收验证邮件，完成验证后在这里登录；也请检查垃圾邮件文件夹。'};render();main.querySelector('#password')?.focus();}
   }else{
    const x=await auth('token?grant_type=password',data);
    saveSession({access_token:x.access_token,refresh_token:x.refresh_token,expiresAt:Date.now()+x.expires_in*1000,email:x.user?.email||data.email});
-   await refresh();
-  }}catch(e){notice(e.message);}return;
+   authFeedback=null;await refresh();
+  }}catch(error){setAuthFeedback(friendlyAuthError(error));}finally{submit.disabled=false;submit.textContent=label;f.removeAttribute('aria-busy');}return;
  }
  if(f.id==='create'){try{const x=await api('/api/create',{name:new FormData(f).get('name')});room=x.room;if(!cloud)localStorage.setItem('treasure:'+room,x.token);history.pushState({},'',`?room=${room}`);await refresh();}catch(e){notice(e.message);}}
  if(f.id==='enter'){room=String(new FormData(f).get('room')).toUpperCase();history.pushState({},'',`?room=${room}`);await refresh();}
  if(f.id==='join'){try{const x=await api(`/api/room/${room}/join`,{name:new FormData(f).get('name')});if(!cloud)localStorage.setItem('treasure:'+room,x.token);await refresh();}catch(e){notice(e.message);}}});
 main.addEventListener('click',async e=>{
+ const mode=e.target.closest('[data-auth-mode]');if(mode){authEmail=main.querySelector('.auth-form [name="email"]')?.value.trim()||authEmail;authMode=mode.dataset.authMode;authFeedback=null;render();main.querySelector('#authEmail')?.focus();return;}
+ const toggle=e.target.closest('[data-toggle-password]');if(toggle){const input=toggle.parentElement.querySelector('input'),visible=input.type==='password';let start,end;try{start=input.selectionStart;end=input.selectionEnd;}catch{}input.type=visible?'text':'password';toggle.setAttribute('aria-pressed',String(visible));toggle.setAttribute('aria-label',`${visible?'隐藏':'显示'}${input.id==='confirmPassword'?'确认密码':'密码'}`);toggle.title=toggle.getAttribute('aria-label');input.focus();if(start!=null)try{input.setSelectionRange(start,end);}catch{}return;}
  const c=e.target.closest('.select-grid .card');if(c){if(!selected.open)selected.open=c.dataset.card;else if(!selected.sealed&&c.dataset.card!==selected.open)selected.sealed=c.dataset.card;else if(c.dataset.card===selected.open){selected.open=selected.sealed;selected.sealed='';}else selected.sealed=c.dataset.card;render();return;}
  const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
  if(a==='copy'){try{const link=new URL(location.href);link.hash='';await navigator.clipboard.writeText(link.toString());notice('房间链接已复制');}catch{notice('请复制浏览器地址栏里的链接');}return;}
@@ -101,6 +120,7 @@ main.addEventListener('click',async e=>{
  if(a==='sellSkip')return send({kind:'sell'});
  if(a==='next')return send({kind:'next'});
 });
+main.addEventListener('input',e=>{if(e.target.matches('.auth-form [name="email"]'))authEmail=e.target.value;if(e.target.closest('.auth-form')&&authFeedback?.type==='error')setAuthFeedback(null);});
 document.querySelector('#account').addEventListener('click',e=>{if(e.target.id==='logout'){saveSession(null);refresh();}});
 setInterval(()=>{if(room&&document.visibilityState==='visible')refresh();},cloud?4000:1800);
 window.addEventListener('popstate',()=>{room=new URLSearchParams(location.search).get('room')?.toUpperCase()||'';refresh();});
