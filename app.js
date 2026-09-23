@@ -24,7 +24,7 @@ async function ensureSession(){
  }).catch(()=>{saveSession(null);return null;}).finally(()=>{refreshPromise=null;});
  return refreshPromise;
 }
-function authForms(){return `<div class="home-grid auth-grid"><form id="signup" class="panel"><h2>注册玩家账号</h2><label>邮箱<input type="email" name="email" required autocomplete="email"></label><label>密码<input type="password" name="password" required minlength="6" autocomplete="new-password"></label><button class="primary">注册</button><p class="hint">注册后请先打开邮箱中的验证链接，再返回登录。</p></form><form id="login" class="panel"><h2>已有账号登录</h2><label>邮箱<input type="email" name="email" required autocomplete="email"></label><label>密码<input type="password" name="password" required autocomplete="current-password"></label><button>登录</button></form></div>`;}
+function authForms(){return `<div class="home-grid auth-grid"><form id="signup" class="panel"><h2>注册玩家账号</h2><label>邮箱<input type="email" name="email" required autocomplete="email"></label><label>密码<input type="password" name="password" required minlength="6" autocomplete="new-password"></label><button class="primary">注册</button><p class="hint">如收到验证邮件，请先点击邮件中的链接。</p></form><form id="login" class="panel"><h2>已有账号登录</h2><label>邮箱<input type="email" name="email" required autocomplete="email"></label><label>密码<input type="password" name="password" required autocomplete="current-password"></label><button>登录</button></form></div>`;}
 function renderAccount(){const el=document.querySelector('#account');if(!cloud){el.textContent='本地游戏';return;}el.innerHTML=session?`<span class="account-email">${esc(session.email)}</span> <button id="logout" class="ghost">退出</button>`:'<span class="account-email">云端对战 · 请登录</span>';}
 async function api(path,data){
  const s=await ensureSession();
@@ -69,8 +69,11 @@ function renderAction(){const s=state,m=s.me,h=s.host===m?.id,a=s.auction;
 main.addEventListener('submit',async e=>{e.preventDefault();const f=e.target;if(f.id==='signup'||f.id==='login'){
   if(!cloud)return;const data=Object.fromEntries(new FormData(f));
   try{if(f.id==='signup'){
-   await auth(`signup?redirect_to=${encodeURIComponent(location.origin+location.pathname)}`,data);
-   notice('注册成功，请先点击邮箱中的验证链接，再登录');
+   const x=await auth(`signup?redirect_to=${encodeURIComponent(location.origin+location.pathname)}`,data);
+   if(x.access_token&&x.refresh_token){
+    saveSession({access_token:x.access_token,refresh_token:x.refresh_token,expiresAt:Date.now()+x.expires_in*1000,email:x.user?.email||data.email});
+    notice('注册成功，已登录');await refresh();
+   }else notice('注册申请已提交；收到验证邮件后请点击链接再登录');
   }else{
    const x=await auth('token?grant_type=password',data);
    saveSession({access_token:x.access_token,refresh_token:x.refresh_token,expiresAt:Date.now()+x.expires_in*1000,email:x.user?.email||data.email});
