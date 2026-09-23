@@ -4,3 +4,39 @@
 
 .bot-setup{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:12px 0}.bot-setup label{min-width:170px;margin:0}.bot-setup button{margin:0}.action-panel .bot-setup+.hint{font-size:13px;color:var(--muted);margin:8px 0 14px}
 .top-actions{display:flex;align-items:center;gap:14px}.account-email{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;display:inline-block;vertical-align:middle}.auth-grid{margin-bottom:20px}.auth-grid .panel{padding:22px}.auth-grid .hint{color:var(--muted);margin-bottom:0}.action-panel .auth-grid{margin-top:20px}@media(max-width:620px){.top-actions{gap:6px}.account-email{max-width:92px}.top .account-email{font-size:10px}.top-actions button{padding:7px 9px}}
+
+
+/* Responsive account form */
+.auth-panel{width:min(100%,460px);max-width:460px;margin:0 auto 24px;text-align:left;padding:28px}
+.auth-welcome{margin:2vh auto 4vh}
+.auth-welcome>p{margin-bottom:22px}
+.auth-panel h2{margin:22px 0 7px}
+.auth-intro,.auth-foot,.auth-help{color:var(--muted);font-size:13px;line-height:1.6}
+.auth-intro{margin-bottom:21px}
+.auth-foot{text-align:center;margin:17px 0 0}
+.auth-switch{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px;padding:4px;background:#191916;border:1px solid var(--line);border-radius:11px}
+.auth-switch button{width:auto;min-width:0;min-height:42px;margin:0;padding:8px;border:0;background:transparent;color:var(--muted);box-shadow:none}
+.auth-switch button.active{background:#4c3d2a;color:#f4d29f}
+.auth-field{margin:15px 0}
+.auth-field label{margin:0 0 7px}
+.auth-field input{min-height:46px}
+.auth-field input::placeholder{color:#8f8575}
+.auth-panel,.auth-form,.auth-field,.auth-password{min-width:0}
+.auth-password{position:relative}
+.auth-password input{padding-right:55px}
+.auth-password .password-toggle{position:absolute;right:5px;top:5px;width:38px;height:36px;min-height:36px;margin:0;padding:7px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center}
+.auth-password .password-toggle:hover,.auth-password .password-toggle[aria-pressed="true"]{color:var(--gold)}
+.password-toggle svg{width:20px;height:20px}
+.password-toggle .eye-slash{display:none}
+.password-toggle[aria-pressed="true"] .eye-slash{display:block}
+.auth-help{margin:-6px 0 13px}
+.auth-feedback{border-radius:9px;padding:11px 13px;margin:12px 0 5px;font-size:13px;line-height:1.6}
+.auth-feedback[hidden]{display:none}
+.auth-feedback.error{background:#4b302c;border:1px solid #8d5a50;color:#ffded5}
+.auth-feedback.success{background:#2d4539;border:1px solid #52775d;color:#e0f4df}
+.auth-form .auth-submit{min-height:46px;margin-top:16px}
+.auth-form .auth-submit:disabled{opacity:.65;cursor:wait}
+.auth-welcome .home-grid{width:min(100%,460px);margin-inline:auto;grid-template-columns:minmax(0,1fr)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.action-panel .auth-panel{margin:20px 0 0}
+@media(max-width:620px){.auth-panel{padding:20px}.auth-panel h2{margin-top:18px}.auth-welcome{margin:24px auto 32px}.auth-welcome>p{margin-bottom:20px}.auth-welcome .home-grid .panel{padding:20px}.top-actions{min-width:0}.top-actions .account-email{display:none}.top-actions button{white-space:nowrap}#account{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
