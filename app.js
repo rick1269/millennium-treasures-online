@@ -24,7 +24,7 @@ async function ensureSession(){
  }).catch(()=>{saveSession(null);return null;}).finally(()=>{refreshPromise=null;});
  return refreshPromise;
 }
-function authForms(){return `<div class="home-grid auth-grid"><form id="signup" class="panel"><h2>注册玩家账号</h2><label>邮箱<input type="email" name="email" required autocomplete="email"></label><label>密码<input type="password" name="password" required minlength="6" autocomplete="new-password"></label><button class="primary">注册</button><p class="hint">如收到验证邮件，请先点击邮件中的链接。</p></form><form id="login" class="panel"><h2>已有账号登录</h2><label>邮箱<input type="email" name="email" required autocomplete="email"></label><label>密码<input type="password" name="password" required autocomplete="current-password"></label><button>登录</button></form></div>`;}
+function authForms(){return `<div class="home-grid auth-grid"><form id="signup" class="panel"><h2>注册玩家账号</h2><label>邮箱<input type="email" name="email" required autocomplete="email"></label><label>密码<input type="password" name="password" required minlength="6" autocomplete="new-password"></label><button class="primary">注册</button><p class="hint">注册后请打开验证邮件中的链接，再返回登录。</p></form><form id="login" class="panel"><h2>已有账号登录</h2><label>邮箱<input type="email" name="email" required autocomplete="email"></label><label>密码<input type="password" name="password" required autocomplete="current-password"></label><button>登录</button></form></div>`;}
 function renderAccount(){const el=document.querySelector('#account');if(!cloud){el.textContent='本地游戏';return;}el.innerHTML=session?`<span class="account-email">${esc(session.email)}</span> <button id="logout" class="ghost">退出</button>`:'<span class="account-email">云端对战 · 请登录</span>';}
 async function api(path,data){
  const s=await ensureSession();
