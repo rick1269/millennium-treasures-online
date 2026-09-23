@@ -4,7 +4,9 @@ document.querySelector('#rulesBtn').onclick=()=>dialog.showModal();
 document.querySelector('#closeRules').onclick=()=>dialog.close();
 let room=new URLSearchParams(location.search).get('room')?.toUpperCase()||'',state=null,selected={open:'',sealed:''};
 const cloud=window.GAME_CLOUD_CONFIG;
-let session=cloud?JSON.parse(localStorage.getItem('treasure:session')||'null'):null;
+if(cloud&&location.hash&&/(?:access_token|refresh_token|type=signup)/.test(location.hash))history.replaceState({},'',location.pathname+location.search);
+let session=null;
+if(cloud){try{session=JSON.parse(localStorage.getItem('treasure:session')||'null');}catch{localStorage.removeItem('treasure:session');}}
 let refreshPromise=null;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const token=()=>localStorage.getItem('treasure:'+room)||'';
@@ -81,7 +83,7 @@ main.addEventListener('submit',async e=>{e.preventDefault();const f=e.target;if(
 main.addEventListener('click',async e=>{
  const c=e.target.closest('.select-grid .card');if(c){if(!selected.open)selected.open=c.dataset.card;else if(!selected.sealed&&c.dataset.card!==selected.open)selected.sealed=c.dataset.card;else if(c.dataset.card===selected.open){selected.open=selected.sealed;selected.sealed='';}else selected.sealed=c.dataset.card;render();return;}
  const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
- if(a==='copy'){try{await navigator.clipboard.writeText(location.href);notice('房间链接已复制');}catch{notice('请复制浏览器地址栏里的链接');}return;}
+ if(a==='copy'){try{const link=new URL(location.href);link.hash='';await navigator.clipboard.writeText(link.toString());notice('房间链接已复制');}catch{notice('请复制浏览器地址栏里的链接');}return;}
  if(a==='start')return send({kind:'start'});
  if(a==='setBots')return send({kind:'setBots',count:Number(document.querySelector('#botCount').value)});
  if(a==='choose')return send({kind:'choose',open:selected.open,sealed:selected.sealed});
