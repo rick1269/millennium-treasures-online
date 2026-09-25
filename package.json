@@ -1,0 +1,22 @@
+{
+  "name": "millennium-treasures",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node web/server.js",
+    "test": "node scripts/sync-cloud-game.js && node --test tests/*.test.js && node scripts/check-product-spec.mjs",
+    "docs:product": "node scripts/capture-product-spec.mjs && node scripts/run-product-spec-builder.mjs && node scripts/check-product-spec.mjs",
+    "docs:product:pdf": "node scripts/run-product-spec-builder.mjs",
+    "docs:check": "node scripts/check-product-spec.mjs",
+    "assets:check": "node scripts/card-assets-cli.js check",
+    "assets:use": "node scripts/card-assets-cli.js use",
+    "build:cloud": "node scripts/sync-cloud-game.js && node scripts/build-cloud-site.js",
+    "build:stable": "node scripts/build-cloud-site.js --stable",
+    "build:edge-bundle": "node scripts/build-edge-bundle.js",
+    "deploy:game": "node scripts/sync-cloud-game.js && SUPABASE_HOME=./.supabase-home supabase functions deploy game --project-ref tjbdzxgplespxrsunywc --use-api --no-verify-jwt --agent no"
+  },
+  "devDependencies": {
+    "supabase": "^2.117.0"
+  }
+}

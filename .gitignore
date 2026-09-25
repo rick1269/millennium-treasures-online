@@ -1,0 +1,21 @@
+node_modules/
+.DS_Store
+cloud-public.json
+cloud-site/
+supabase/.branches/
+supabase/.temp/
+supabase/edge-bundle/
+.supabase-home/
+.supabase/
+.npm-cache/
+supabase/functions/.env
+.env
+.env.*
+web/data/
+tmp/
+tools/
+cards/81张正面总览.jpg
+cards/千年藏珍_81张实体卡素材/
+cards/千年藏珍_81张独立插画层/
+cards/print/
+千年藏珍 · 文物拍卖桌游设计案.pdf

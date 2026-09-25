@@ -1,0 +1,4 @@
+project_id = "millennium-treasures"
+
+[functions.game]
+verify_jwt = false

@@ -1,0 +1,131 @@
+{
+  "sourceHashes": {
+    "web/game.js": "57cd119cbf6bc185548357dfa730c63bbf7de97ee19e49235c5eee487a87778e",
+    "web/app.js": "16122de95eadfe25585cc36d674888fa65c61a842d752e4659c7de804d15dbad",
+    "web/style.css": "0960055a8ce183eead1a62dc6baa215b747cc9ae9c8b531bd97390bd8dc98735",
+    "web/catalog.js": "668fec923f234473e93eaad9428b2c38d67a73c6aeb6c0d20c023aafad54fb14",
+    "web/index.html": "4921a64f8658b5d39384acaef983b70f073048835a0207a7671d175bf77d5777",
+    "cloud-site/card-assets.js": "4cb7c366c1c10a2d585dfb2919b69966e462e0ac5de0e8d4be9d3c3c6ca3017b"
+  },
+  "shots": [
+    {
+      "name": "01-lobby",
+      "caption": "3 人入席与开局",
+      "phase": "lobby",
+      "turn": 1,
+      "file": "product-spec-assets/01-lobby.png"
+    },
+    {
+      "name": "02-select",
+      "caption": "起始玩家背面选择心仪卡、拍卖模式与方向",
+      "phase": "select",
+      "turn": 1,
+      "file": "product-spec-assets/02-select.png"
+    },
+    {
+      "name": "03-pre-auction",
+      "caption": "第 1 张翻面前的出售窗口",
+      "phase": "pre-auction",
+      "turn": 1,
+      "file": "product-spec-assets/03-pre-auction.png"
+    },
+    {
+      "name": "04-open",
+      "caption": "明拍出价与实付区间",
+      "phase": "open",
+      "turn": 1,
+      "file": "product-spec-assets/04-open.png"
+    },
+    {
+      "name": "05-settlement",
+      "caption": "落槌后的结算单与下一张出售窗口",
+      "phase": "pre-auction",
+      "turn": 1,
+      "file": "product-spec-assets/05-settlement.png"
+    },
+    {
+      "name": "05b-sale-confirm",
+      "caption": "卖给拍卖行前的金额确认弹窗",
+      "phase": "pre-auction",
+      "turn": 1,
+      "file": "product-spec-assets/05b-sale-confirm.png"
+    },
+    {
+      "name": "06-sealed",
+      "caption": "暗拍密封报价",
+      "phase": "sealed",
+      "turn": 1,
+      "file": "product-spec-assets/06-sealed.png"
+    },
+    {
+      "name": "07-tie",
+      "caption": "最高价并列后的重拍",
+      "phase": "sealed",
+      "turn": 1,
+      "file": "product-spec-assets/07-tie.png"
+    },
+    {
+      "name": "08-request",
+      "caption": "两张正式拍卖结束后发起求购",
+      "phase": "trade-request",
+      "turn": 1,
+      "file": "product-spec-assets/08-request.png"
+    },
+    {
+      "name": "09-request-response",
+      "caption": "持卡人回应求购与红卡税预览",
+      "phase": "request-response",
+      "turn": 1,
+      "file": "product-spec-assets/09-request-response.png"
+    },
+    {
+      "name": "10-request-choice",
+      "caption": "起始玩家选择求购对象或放弃",
+      "phase": "request-choice",
+      "turn": 1,
+      "file": "product-spec-assets/10-request-choice.png"
+    },
+    {
+      "name": "11-free-trade",
+      "caption": "自由交易填写卡牌与双向金币",
+      "phase": "trade-free",
+      "turn": 1,
+      "file": "product-spec-assets/11-free-trade.png"
+    },
+    {
+      "name": "12-trade-response",
+      "caption": "对方同意或拒绝自由交易",
+      "phase": "trade-response",
+      "turn": 1,
+      "file": "product-spec-assets/12-trade-response.png"
+    },
+    {
+      "name": "13-collection",
+      "caption": "个人藏品、时代估值与套组缺口",
+      "phase": "turn-end",
+      "turn": 1,
+      "file": "product-spec-assets/13-collection.png"
+    },
+    {
+      "name": "14-turn-end",
+      "caption": "本轮结束与轮换",
+      "phase": "turn-end",
+      "turn": 1,
+      "file": "product-spec-assets/14-turn-end.png"
+    },
+    {
+      "name": "15-info",
+      "caption": "房间信息、超时偏好、拍卖记录",
+      "phase": "turn-end",
+      "turn": 1,
+      "file": "product-spec-assets/15-info.png"
+    },
+    {
+      "name": "16-finished",
+      "caption": "6 轮后的终局排名与逐时代计分",
+      "phase": "finished",
+      "turn": 6,
+      "file": "product-spec-assets/16-finished.png"
+    }
+  ]
+}
