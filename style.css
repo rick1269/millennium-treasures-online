@@ -112,3 +112,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
  .auction-preview{flex-direction:column;align-items:flex-start;gap:12px}
  .auction-preview .card{width:130px}
 }
+
+/* Show the complete row of face-down lots while the host chooses and before each flip. */
+.action-panel .blind-grid{margin:18px 0 20px}
+.blind-card.current{border-color:#f2cf83;box-shadow:inset 0 0 0 4px #143551,inset 0 0 0 6px #a98758,0 0 0 3px #f2cf8380,0 9px 18px #0005}
+.blind-card.current::after{content:'下一张';position:absolute;top:-10px;right:-8px;padding:3px 6px;border-radius:5px;background:#e8bd78;color:#282018;font:700 10px/1.2 "PingFang SC",sans-serif}
+.selection-help{color:var(--gold);font-size:13px;margin:0 0 14px}
+.action-panel button[data-act="choose"]:disabled{opacity:.55;cursor:not-allowed}
