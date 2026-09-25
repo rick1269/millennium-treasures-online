@@ -2,7 +2,7 @@ const main=document.querySelector('#main'),toast=document.querySelector('#toast'
 const dialog=document.querySelector('#rules');
 document.querySelector('#rulesBtn').onclick=()=>dialog.showModal();
 document.querySelector('#closeRules').onclick=()=>dialog.close();
-let room=new URLSearchParams(location.search).get('room')?.toUpperCase()||'',state=null,selectedPosition=null,selectedFirstMode='open',selectedDirection=1,selectionKey=null;
+let room=new URLSearchParams(location.search).get('room')?.toUpperCase()||'',state=null,selectedPosition=null,selectedFirstMode='open',selectedDirection=1,selectionKey=null,mobileView='table';
 let voiceRecording=null,voiceTimer=null,currentAudio=null,voiceHold=false;
 const cloud=window.GAME_CLOUD_CONFIG;
 const cardAssets=window.GAME_CARD_ASSETS||{version:'v1.0.0',cards:{}};
@@ -102,6 +102,31 @@ async function send(data){
  catch(e){notice(e.message);}
  finally{actionPending=false;buttons.forEach(button=>button.disabled=false);}
 }
+async function joinAndSit(seat){
+ if(actionPending||state?.phase!=='lobby')return;
+ actionPending=true;
+ const target=main.querySelector(`[data-act="sit"][data-seat="${seat}"]`);
+ if(target)target.setAttribute('aria-busy','true');
+ try{
+  if(!state.me){
+   if(cloud&&!session){guestMode=true;sessionStorage.setItem('treasure:guestMode','1');}
+   let joined=false,lastError;
+   for(let attempt=0;attempt<4&&!joined;attempt++){
+    try{
+     const name=attempt===0?suggestedName:`${randomItem(nameVerbs)}的${randomItem(nameNouns)}`;
+     const result=await api(`/api/room/${room}/join`,{name,avatar:randomItem(avatars),...(cloud&&guestMode?{guest:true}:{})});
+     if(!cloud)localStorage.setItem('treasure:'+room,result.token);
+     else if(result.guestToken)sessionStorage.setItem('treasure:guest:'+room,result.guestToken);
+     joined=true;
+    }catch(error){lastError=error;if(!/称呼|名字|name/i.test(error.message))throw error;}
+   }
+   if(!joined)throw lastError;
+  }
+  state=await api(`/api/room/${room}/act`,cloud?{kind:'sit',seat}:{kind:'sit',seat,token:token()});
+  mobileView='table';syncSelectionDraft();render();notice(`已坐到 ${seat+1} 号位`);
+ }catch(error){notice(error.message);await refresh();}
+ finally{actionPending=false;if(target?.isConnected)target.removeAttribute('aria-busy');}
+}
 const who=id=>[...(state?.players||[]),...(state?.spectators||[])].find(p=>p.id===id)?.name||'藏家';
 const stars=n=>'★'.repeat(n);
 const eraLabel=e=>e==='民国'?'中国民国':e;
@@ -113,7 +138,7 @@ function card(c,extra=''){
 }
 function button(label,action,cls=''){return `<button class="${cls}" data-act="${action}">${label}</button>`;}
 function phaseName(phase){return ({lobby:'等待入席',select:'盲标与定序','trade-request':'私下求购','request-response':'回应求购','request-choice':'选择求购对象','trade-free':'自由交易','trade-response':'回应自由交易','pre-auction':'拍前出售',open:'明拍竞价',sealed:'暗拍报价','turn-end':'本轮结束',finished:'终局结算'})[phase]||phase;}
-function renderHome(){renderAccount();main.innerHTML=`<section class="welcome ${cloud&&!session&&!guestMode?'auth-welcome':''}"><div class="eyebrow">拍出历史 · 收藏未来</div><h1>拍卖大亨 <small>基础款 v2.1.3</small></h1><p>围桌竞拍九个时代的藏品。进入房间后可旁观、选座，或由房主安排机器人；文字与语音消息让大家边玩边聊。3–6 人开局，每人 150 金。</p>${cloud&&!session&&!guestMode?authForms():''}${guestMode?'<p class="guest-note">正在以游客身份体验。游客没有账号战绩；关闭浏览器后无法找回席位。</p>':''}<div class="home-grid">${!cloud||session||guestMode?`<form id="create" class="panel"><h2>开启新拍卖</h2><label>你的称呼<input name="name" maxlength="16" value="${esc(suggestedName)}" required></label>${avatarSelect()}<button class="primary">创建房间</button></form>`:''}<form id="enter" class="panel"><h2>加入已有房间</h2><label>六位房间码<input name="room" maxlength="6" placeholder="例如：A1B2C3" required></label><button>查看房间</button></form></div><p class="hint">总席位 3–6 位 · 总共 2N 轮 · 支持机器人</p><p><a href="./manual.html" target="_blank" rel="noopener">阅读完整用户手册</a></p>${cardAssets.overview?`<p class="asset-overview"><a href="${esc(cardAssets.overview)}" target="_blank" rel="noopener">查看卡牌总览</a></p>`:''}</section>`;}
+function renderHome(){document.body.classList.remove('room-view');renderAccount();main.innerHTML=`<section class="welcome ${cloud&&!session&&!guestMode?'auth-welcome':''}"><div class="eyebrow">拍出历史 · 收藏未来</div><h1>拍卖大亨 <small>基础款 v2.2.0</small></h1><p>围桌竞拍九个时代的藏品。进入房间后可旁观、选座，或由房主安排机器人；文字与语音消息让大家边玩边聊。3–6 人开局，每人 150 金。</p>${cloud&&!session&&!guestMode?authForms():''}${guestMode?'<p class="guest-note">正在以游客身份体验。游客没有账号战绩；关闭浏览器后无法找回席位。</p>':''}<div class="home-grid">${!cloud||session||guestMode?`<form id="create" class="panel"><h2>开启新拍卖</h2><label>你的称呼<input name="name" maxlength="16" value="${esc(suggestedName)}" required></label>${avatarSelect()}<button class="primary">创建房间</button></form>`:''}<form id="enter" class="panel"><h2>加入已有房间</h2><label>六位房间码<input name="room" maxlength="6" placeholder="例如：A1B2C3" required></label><button>查看房间</button></form></div><p class="hint">总席位 3–6 位 · 总共 2N 轮 · 支持机器人</p><p><a href="./manual.html" target="_blank" rel="noopener">阅读完整用户手册</a></p>${cardAssets.overview?`<p class="asset-overview"><a href="${esc(cardAssets.overview)}" target="_blank" rel="noopener">查看卡牌总览</a></p>`:''}</section>`;}
 const cardOptions=(cards,empty='没有可选卡')=>cards.length?cards.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} · ${c.star}星 · 编号 ${esc(c.id)}</option>`).join(''):`<option value="">${empty}</option>`;
 function cardBack(index,{selectable=false,selected=false,blind=false,current=false}={}){
  const contents=`<span class="card-back-number">第 ${index} 张</span><span class="card-back-seal" aria-hidden="true">藏</span><span class="card-back-caption">${blind?'心仪卡':current?'下一张':'拍卖大亨'}</span>`;
@@ -126,7 +151,8 @@ function roundCardBacks(s,{selectable=false}={}){
 function seatMarkup(s,i){
  const p=s.players.find(x=>x.seat===i),m=s.me,owner=m?.id===s.owner,lobby=s.phase==='lobby';
  if(p)return `<div class="table-seat seat-${i} ${p.id===m?.id?'is-me':''} ${p.id===s.host&&s.phase!=='lobby'?'is-host':''}"><div class="seat-avatar" aria-hidden="true">${esc(p.avatar||'🦊')}</div><div class="seat-detail"><strong>${esc(p.name)}</strong><small><span class="seat-role ${p.autoPilot?'urgent':''}">${p.isBot?'机器人':p.autoPilot?'托管中':p.isGuest?'游客':'玩家'}</span><span class="seat-stats">${p.coins} 金${s.phase!=='lobby'?` · ${p.count} 张`:''}</span></small></div>${owner&&lobby&&p.isBot?`<button type="button" class="seat-mini" data-act="seatBot" data-seat="${i}">移走</button>`:''}</div>`;
- return `<div class="table-seat seat-${i} vacant"><div class="seat-avatar" aria-hidden="true">＋</div><div class="seat-detail"><strong>${i+1} 号空位</strong><small>${lobby?'可入席':'等待下一局'}</small></div>${lobby&&m?.seat===null?`<button type="button" class="seat-mini" data-act="sit" data-seat="${i}">坐下</button>`:''}${lobby&&owner?`<button type="button" class="seat-mini ghost" data-act="seatBot" data-seat="${i}">安排机器人</button>`:''}</div>`;
+ const canSit=lobby&&(!m||m.seat===null);
+ return `<div class="table-seat seat-${i} vacant ${canSit?'is-joinable':''}" ${canSit?`role="button" tabindex="0" data-act="sit" data-seat="${i}" aria-label="坐到 ${i+1} 号空位"`:''}><div class="seat-avatar" aria-hidden="true">＋</div><div class="seat-detail"><strong>${i+1} 号空位</strong><small>${canSit?'点按入席':lobby?owner?'可安排机器人':'等待藏家':'等待下一局'}</small></div>${lobby&&owner?`<button type="button" class="seat-mini ghost" data-act="seatBot" data-seat="${i}">安排机器人</button>`:''}</div>`;
 }
 function tableCenter(s){
  let cards='';
@@ -136,16 +162,17 @@ function tableCenter(s){
 }
 function chatMarkup(s){
  const m=s.me;
- return `<section class="panel chat-panel"><div class="section-heading"><h2>围桌交流</h2><span>文字 · 语音</span></div><div class="chat-list" aria-live="polite">${(s.chat||[]).length?(s.chat||[]).map(x=>`<div class="chat-message ${x.sender===m?.id?'mine':''}"><span class="chat-avatar">${esc(x.avatar||'🦊')}</span><div><div class="chat-by">${esc(x.name)} <time>${new Date(x.at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</time></div>${x.kind==='voice'?`<button type="button" class="voice-play" data-voice-id="${esc(x.id)}">▶ 语音 ${x.duration||''} 秒</button>`:`<p>${esc(x.text)}</p>`}</div></div>`).join(''):'<p class="empty">还没有消息，和桌边的人打个招呼吧。</p>'}</div>${m?`<form id="chatForm" class="chat-compose"><input name="message" maxlength="300" placeholder="发文字消息…" aria-label="文字消息"><button type="submit">发送</button></form><button type="button" class="voice-record ghost" data-voice-record aria-label="按住录制语音">🎙 按住录制，松开发送（最多 15 秒）</button>`:'<p class="chat-join-note">进入房间后即可发文字和语音。</p>'}</section>`;
+ return `<section class="panel chat-panel"><button type="button" class="panel-return ghost" data-view="table">← 返回桌面</button><div class="section-heading"><h2>围桌交流</h2><span>文字 · 语音</span></div><div class="chat-list" aria-live="polite">${(s.chat||[]).length?(s.chat||[]).map(x=>`<div class="chat-message ${x.sender===m?.id?'mine':''}"><span class="chat-avatar">${esc(x.avatar||'🦊')}</span><div><div class="chat-by">${esc(x.name)} <time>${new Date(x.at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</time></div>${x.kind==='voice'?`<button type="button" class="voice-play" data-voice-id="${esc(x.id)}">▶ 语音 ${x.duration||''} 秒</button>`:`<p>${esc(x.text)}</p>`}</div></div>`).join(''):'<p class="empty">还没有消息，和桌边的人打个招呼吧。</p>'}</div>${m?`<form id="chatForm" class="chat-compose"><input name="message" maxlength="300" placeholder="发文字消息…" aria-label="文字消息"><button type="submit">发送</button></form><button type="button" class="voice-record ghost" data-voice-record aria-label="按住录制语音">🎙 按住录制，松开发送（最多 15 秒）</button>`:'<p class="chat-join-note">进入房间后即可发文字和语音。</p>'}</section>`;
 }
-function render(){if(!room){renderHome();return;}if(!state)return;renderAccount();const s=state,m=s.me,phase=s.phase;
- main.innerHTML=`<div class="game-shell"><section class="game-head"><div><div class="eyebrow">房间 ${esc(room)} · ${s.maxTurns?`第 ${s.turn} / ${s.maxTurns} 轮`:'等待开局'}</div><h1>${phaseName(phase)}</h1><p>${phase==='lobby'?'点击空座位入席，房主决定开局时间。':phase==='finished'?'所有拍卖已经落槌。':`本轮起始玩家：${esc(who(s.host))} · ${s.direction===1?'顺时针':s.direction===-1?'逆时针':'待定方向'}`}</p></div><div class="head-actions">${button('复制房间链接','copy','ghost')}<div class="rate"><span class="rate-label">拍卖行</span>${[1,2,3,4].map(n=>`<span class="rate-chip">${n}星 ${Math.max(0,100+(s.rates[n]||0))}%</span>`).join('')}</div></div></section>
- <div class="columns"><div class="main-column"><section class="table-stage" aria-label="围桌座位和拍卖桌">${tableCenter(s)}${Array.from({length:6},(_,i)=>seatMarkup(s,i)).join('')}</section><div class="spectator-bar"><strong>旁观席 · ${s.spectators?.length||0}</strong>${(s.spectators||[]).map(x=>`<span class="spectator-chip">${esc(x.avatar)} ${esc(x.name)}</span>`).join('')||'<span>暂时没有观众</span>'}</div><section class="panel action-panel">${renderAction()}</section>${m?.seat!==null&&m?`<section class="panel"><div class="section-heading"><h2>我的藏品</h2><span>${m.coins} 金 · ${m.hand.length} 张</span></div><div class="card-grid">${m.hand.length?m.hand.map(c=>card(c)).join(''):'<p class="empty">还没有藏品。</p>'}</div></section>`:''}</div>
- <aside>${chatMarkup(s)}<section class="panel log"><h2>拍卖记录</h2><ol>${s.log.slice().reverse().map(x=>`<li>${esc(x)}</li>`).join('')}</ol></section>${s.eras.length?`<section class="panel"><h2>本局时代</h2><div class="era-tags">${s.eras.map(e=>`<span>${esc(eraLabel(e))}</span>`).join('')}</div></section>`:''}<section class="panel mini-rules"><h2>计分提示</h2><p>金币 + 藏品估值；同系 123 各 ×1.5，1234 各 ×2。</p><p>红卡缺 123 时，其红卡估值没收。</p><a href="./manual.html" target="_blank" rel="noopener">完整用户手册</a></section></aside></div></div>`;
+function render(){if(!room){renderHome();return;}if(!state)return;document.body.classList.add('room-view');renderAccount();const s=state,m=s.me,phase=s.phase;
+ if(mobileView==='collection'&&(!m||m.seat===null))mobileView='table';
+ main.innerHTML=`<div class="game-shell view-${mobileView}"><section class="game-head"><div class="game-heading"><div class="eyebrow">房间 ${esc(room)} · ${s.maxTurns?`第 ${s.turn} / ${s.maxTurns} 轮`:'等待开局'}</div><h1>${phaseName(phase)}</h1><p>${phase==='lobby'?'点击空座位入席，房主决定开局时间。':phase==='finished'?'所有拍卖已经落槌。':`本轮起始玩家：${esc(who(s.host))} · ${s.direction===1?'顺时针':s.direction===-1?'逆时针':'待定方向'}`}</p></div><div class="head-actions">${button('复制房间链接','copy','ghost')}<div class="rate"><span class="rate-label">拍卖行</span>${[1,2,3,4].map(n=>`<span class="rate-chip">${n}星 ${Math.max(0,100+(s.rates[n]||0))}%</span>`).join('')}</div></div><button type="button" class="room-exit ghost" data-act="leaveRoom">退出房间</button></section>
+ <div class="columns"><div class="main-column"><section class="table-stage" aria-label="围桌座位和拍卖桌">${tableCenter(s)}${Array.from({length:6},(_,i)=>seatMarkup(s,i)).join('')}</section><div class="spectator-bar"><strong>旁观席 · ${s.spectators?.length||0}</strong>${(s.spectators||[]).map(x=>`<span class="spectator-chip">${esc(x.avatar)} ${esc(x.name)}</span>`).join('')||'<span>暂时没有观众</span>'}</div><section class="panel action-panel"><button type="button" class="panel-return ghost" data-view="table">← 返回桌面</button>${renderAction()}</section>${m?.seat!==null&&m?`<section class="panel collection-panel"><button type="button" class="panel-return ghost" data-view="table">← 返回桌面</button><div class="section-heading"><h2>我的藏品</h2><span>${m.coins} 金 · ${m.hand.length} 张</span></div><div class="card-grid">${m.hand.length?m.hand.map(c=>card(c)).join(''):'<p class="empty">还没有藏品。</p>'}</div></section>`:''}</div>
+ <aside>${chatMarkup(s)}<section class="panel info-panel"><button type="button" class="panel-return ghost" data-view="table">← 返回桌面</button><h2>房间信息</h2><div class="spectator-summary">旁观席 ${s.spectators?.length||0} 人 · ${s.players.length} 人入席</div><div class="info-actions">${button('复制房间链接','copy','ghost')}<button type="button" class="ghost" data-act="rules">玩法说明</button></div><h3>拍卖记录</h3><ol class="room-log">${s.log.slice().reverse().map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${s.eras.length?`<h3>本局时代</h3><div class="era-tags">${s.eras.map(e=>`<span>${esc(eraLabel(e))}</span>`).join('')}</div>`:''}<div class="mini-rules"><h3>计分提示</h3><p>金币 + 藏品估值；同系 123 各 ×1.5，1234 各 ×2。</p><p>红卡缺 123 时，其红卡估值没收。</p><a href="./manual.html" target="_blank" rel="noopener">完整用户手册</a></div></section></aside></div><nav class="room-nav" aria-label="房间页面">${[['table','桌面'],['action','操作'],...(m&&m.seat!==null?[['collection','藏品']]:[]),['chat','交流'],['info','信息']].map(([view,label])=>`<button type="button" data-view="${view}" class="${mobileView===view?'active':''}" aria-current="${mobileView===view?'page':'false'}">${label}</button>`).join('')}</nav></div>`;
  const list=main.querySelector('.chat-list');if(list)list.scrollTop=list.scrollHeight;
 }
 function renderAction(){const s=state,m=s.me,h=s.host===m?.id,a=s.auction,t=s.trade;
- if(s.phase==='lobby')return `<h2>开局前的座位</h2><p>进房后先在旁观席观看；点击空座位入席。房主可在空座位安排机器人，凑齐至少 3 位藏家后随时开局。</p>${m?`<div class="callout">${m.seat===null?`你正在旁观。点击桌边空位即可坐下。`:`你已坐在 ${m.seat+1} 号位。`}目前 ${s.players.length} 位藏家、${s.spectators?.length||0} 位观众。</div>${m.seat!==null?button('离席旁观','stand','ghost'):''}${m.id===s.owner?`<button type="button" class="primary" data-act="start" ${s.players.length<3?'disabled':''}>房主开始游戏</button><p class="hint">由你决定何时开局；至少 3 人入席。</p>`:''}`:cloud&&!session&&!guestMode?authForms():`<form id="join"><label>你的称呼<input name="name" maxlength="16" required placeholder="输入称呼"></label>${avatarSelect()}<button class="primary">进入房间旁观</button></form>`}`;
+ if(s.phase==='lobby')return `<h2>开局前的座位</h2><p>点击空位即可入席。房主可安排机器人，凑齐至少 3 位藏家后随时开局。</p>${m?`<div class="callout">${m.seat===null?`你正在旁观。点击桌边空位即可坐下。`:`你已坐在 ${m.seat+1} 号位。`}目前 ${s.players.length} 位藏家、${s.spectators?.length||0} 位观众。</div>${m.seat!==null?button('离席旁观','stand','ghost'):''}${m.id===s.owner?`<button type="button" class="primary" data-act="start" ${s.players.length<3?'disabled':''}>房主开始游戏</button><p class="hint">由你决定何时开局；至少 3 人入席。</p>`:''}`:`<form id="join"><label>你的称呼<input name="name" maxlength="16" value="${esc(suggestedName)}" required></label>${avatarSelect()}<button class="primary">进入房间旁观</button></form>`}`;
  if(s.phase==='finished')return `<h2>本局结算</h2><p>隐藏红卡：${esc(s.hiddenRed?.name)}。总分最高者获胜；同分先比金币、再比完整套数。</p><div class="ranking">${s.winner.map((p,i)=>`<div><b>${i+1}. ${esc(p.name)}${p.isGuest?'（游客）':''}</b><strong>${p.total} 分</strong><small>金币 ${p.coins} + 藏品 ${p.value} − 没收红卡 ${p.penalty}</small></div>`).join('')}</div>`;
  if(!m)return `<h2>旁观本局</h2><p>开局后仍可进入房间，查看公开局面并交流；座位在本局结束前保持锁定。</p>${cloud&&!session&&!guestMode?authForms():`<form id="join"><label>你的称呼<input name="name" maxlength="16" required placeholder="输入称呼"></label>${avatarSelect()}<button class="primary">进入房间旁观</button></form>`}`;
  if(s.phase==='select')return h?`<h2>从 ${s.lotCount} 张卡背中选心仪卡</h2><p>卡牌仍背面朝上。请点选一张心仪卡；拍下它时实付八折。选定第一张的拍卖模式后，先进入拍前出售窗口。</p>${roundCardBacks(s,{selectable:true})}<p class="selection-help" role="status">${selectedPosition===null?'请先点选一张卡背。':`已选择第 ${selectedPosition+1} 张。`}</p><label>第一张模式<select id="firstMode"><option value="open" ${selectedFirstMode==='open'?'selected':''}>明拍</option><option value="sealed" ${selectedFirstMode==='sealed'?'selected':''}>暗拍</option></select></label>${s.direction===null?`<label>轮换方向<select id="direction"><option value="1" ${selectedDirection===1?'selected':''}>顺时针</option><option value="-1" ${selectedDirection===-1?'selected':''}>逆时针</option></select></label>`:''}<button type="button" class="primary" data-act="choose" ${selectedPosition===null?'disabled':''}>确认心仪卡，进入拍前出售</button>`:`<h2>等待起始玩家选心仪卡</h2><p>本轮抽出 ${s.lotCount} 张背面卡，由 ${esc(who(s.host))} 盲选一张，然后进入拍前出售和逐张拍卖。</p>${roundCardBacks(s)}`;
@@ -188,6 +215,7 @@ main.addEventListener('pointerdown',e=>{const button=e.target.closest('[data-voi
 main.addEventListener('pointerup',e=>{if(e.target.closest('[data-voice-record]'))endVoice(false);});
 main.addEventListener('pointercancel',e=>{if(e.target.closest('[data-voice-record]'))endVoice(true);});
 main.addEventListener('keydown',e=>{const button=e.target.closest('[data-voice-record]');if(button&&[' ','Enter'].includes(e.key)){e.preventDefault();if(!e.repeat)startVoice(button);}});
+main.addEventListener('keydown',e=>{const seat=e.target.closest('.table-seat.is-joinable[data-act="sit"]');if(seat&&e.target===seat&&[' ','Enter'].includes(e.key)){e.preventDefault();joinAndSit(Number(seat.dataset.seat));}});
 main.addEventListener('keyup',e=>{if(e.target.closest('[data-voice-record]')&&[' ','Enter'].includes(e.key)){e.preventDefault();endVoice(false);}});
 main.addEventListener('click',async e=>{
  const voice=e.target.closest('[data-voice-id]');if(voice){playVoice(voice.dataset.voiceId);return;}
@@ -195,10 +223,13 @@ main.addEventListener('click',async e=>{
  const mode=e.target.closest('[data-auth-mode]');if(mode){authEmail=main.querySelector('.auth-form [name="email"]')?.value.trim()||authEmail;authMode=mode.dataset.authMode;authFeedback=null;render();main.querySelector('#authEmail')?.focus();return;}
  const toggle=e.target.closest('[data-toggle-password]');if(toggle){const input=toggle.parentElement.querySelector('input'),visible=input.type==='password';let start,end;try{start=input.selectionStart;end=input.selectionEnd;}catch{}input.type=visible?'text':'password';toggle.setAttribute('aria-pressed',String(visible));toggle.setAttribute('aria-label',`${visible?'隐藏':'显示'}${input.id==='confirmPassword'?'确认密码':'密码'}`);toggle.title=toggle.getAttribute('aria-label');input.focus();if(start!=null)try{input.setSelectionRange(start,end);}catch{}return;}
  const blind=e.target.closest('[data-position]');if(blind){selectedPosition=Number(blind.dataset.position);main.querySelectorAll('[data-position]').forEach(card=>{const selected=card===blind;card.classList.toggle('active',selected);card.setAttribute('aria-pressed',String(selected));});const hint=main.querySelector('.selection-help');if(hint)hint.textContent=`已选择第 ${selectedPosition+1} 张。`;const confirm=main.querySelector('[data-act="choose"]');if(confirm)confirm.disabled=false;return;}
+ const viewButton=e.target.closest('[data-view]');if(viewButton){mobileView=viewButton.dataset.view;const shell=main.querySelector('.game-shell');if(shell){shell.className=`game-shell view-${mobileView}`;main.querySelectorAll('.room-nav [data-view]').forEach(button=>{const active=button.dataset.view===mobileView;button.classList.toggle('active',active);button.setAttribute('aria-current',active?'page':'false');});}return;}
  const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
+ if(a==='leaveRoom'){if(cloud&&state?.me)api(`/api/room/${room}/leave`,{}).catch(()=>{});room='';state=null;mobileView='table';history.pushState({},'',location.pathname);render();return;}
+ if(a==='rules'){dialog.showModal();return;}
  if(a==='copy'){try{const link=new URL(location.href);link.hash='';await navigator.clipboard.writeText(link.toString());notice('房间链接已复制');}catch{notice('请复制浏览器地址栏里的链接');}return;}
  if(a==='start')return send({kind:'start'});
- if(a==='sit')return send({kind:'sit',seat:Number(b.dataset.seat)});
+ if(a==='sit')return joinAndSit(Number(b.dataset.seat));
  if(a==='stand')return send({kind:'stand'});
  if(a==='seatBot')return send({kind:'setSeatBot',seat:Number(b.dataset.seat)});
  if(a==='setBots')return send({kind:'setBots',count:Number(document.querySelector('#botCount').value)});
@@ -223,5 +254,5 @@ main.addEventListener('change',e=>{if(e.target.id==='firstMode')selectedFirstMod
 document.querySelector('#account').addEventListener('click',e=>{if(e.target.id==='logout'){saveSession(null);refresh();}if(e.target.id==='leaveGuest')setGuestMode(false);});
 setInterval(()=>{if(room)refresh();},cloud?4000:1800);
 window.addEventListener('pagehide',()=>{if(!cloud||!room||!state?.me)return;const headers={apikey:cloud.key,'Content-Type':'application/json','X-Client-Id':clientId};if(session&&!guestMode)headers.Authorization=`Bearer ${session.access_token}`;else if(guestMode&&guestToken())headers['X-Guest-Token']=guestToken();else return;fetch(`${cloud.url}/functions/v1/game/api/room/${room}/leave`,{method:'POST',headers,body:'{}',keepalive:true}).catch(()=>{});});
-window.addEventListener('popstate',()=>{room=new URLSearchParams(location.search).get('room')?.toUpperCase()||'';refresh();});
+window.addEventListener('popstate',()=>{room=new URLSearchParams(location.search).get('room')?.toUpperCase()||'';mobileView='table';refresh();});
 refresh();
