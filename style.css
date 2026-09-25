@@ -119,6 +119,18 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .blind-card.current::after{content:'下一张';position:absolute;top:-10px;right:-8px;padding:3px 6px;border-radius:5px;background:#e8bd78;color:#282018;font:700 10px/1.2 "PingFang SC",sans-serif}
 .selection-help{color:var(--gold);font-size:13px;margin:0 0 14px}
 .action-panel button[data-act="choose"]:disabled{opacity:.55;cursor:not-allowed}
+.payment-preview,.trade-preview,.receipt,.score-summary{margin:13px 0;padding:12px 14px;border:1px solid #776044;border-radius:10px;background:#332d24;color:#f1dfbf;font-size:13px;line-height:1.6}
+.idle-countdown{margin:0 0 13px;padding:9px 12px;border:1px solid #8e6749;border-radius:9px;background:#3e3026;color:#f5d7b7;font-size:12px;line-height:1.5}.countdown-value{font-variant-numeric:tabular-nums;font-weight:700;color:#ffdd9b}
+.payment-preview strong,.receipt b{color:#ffd889}
+.payment-preview .risk{display:block;color:#ffc2a9;margin-top:5px}
+.receipt strong{display:block;color:#f6d298}
+.receipt p{margin:5px 0}.receipt small{color:#d8bda3}
+.score-era{display:grid;gap:3px;padding:10px 0;border-bottom:1px solid #564838;font-size:13px;line-height:1.5}
+.score-era strong{color:#f5d39b}.score-era small{color:#baa991}
+.score-breakdown{padding:4px 8px 10px}
+.ranking details{border-bottom:1px solid #554737}.ranking summary{cursor:pointer;list-style:none}.ranking summary::-webkit-details-marker{display:none}
+.ranking summary::after{content:'查看逐时代计分';display:block;color:#d8b474;font-size:11px;margin-top:3px}
+.ranking details[open] summary::after{content:'收起逐时代计分'}
 
 /* The room is a single mobile game screen. Secondary pages scroll inside their own panel. */
 .table-seat.is-joinable{cursor:pointer;border-color:#d6aa6c;background:#343024ed}
