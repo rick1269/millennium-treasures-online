@@ -82,6 +82,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .rate{display:flex;align-items:center;flex-wrap:wrap;gap:6px;white-space:normal}
 .rate-label{color:var(--muted);font-weight:700;margin-right:2px}
 .rate-chip{display:inline-flex;align-items:center;white-space:nowrap;padding:3px 7px;border:1px solid #67553b;border-radius:6px;background:#30291f;font-size:12px;line-height:1.4}
+.action-rates{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:5px;margin-bottom:14px;color:var(--muted);font-size:12px}.action-rates .rate-chip{color:var(--gold)}.ready-status{margin:14px 0;color:var(--muted)}.ready-status strong{color:var(--gold)}.bid-shortcuts{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:16px;color:var(--muted);font-size:13px}.bid-shortcuts button{padding:7px 12px}.blind-card.favorite,.card.favorite-card{border:3px solid #e6bd62;box-shadow:0 0 0 3px #e6bd6255,0 0 22px #e6bd6244}.card.favorite-card:after{content:'心仪卡';position:absolute;right:8px;top:8px;z-index:2;padding:3px 6px;border-radius:5px;background:#2a2115;color:#f2c97e;font-size:11px}
 .chat-compose input{width:auto;min-width:0;flex:1 1 auto}
 .chat-compose button{width:auto;min-width:66px;flex:0 0 auto;margin:0;padding:8px 12px}
 .seat-role::after{content:" · "}
