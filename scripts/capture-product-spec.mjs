@@ -16,7 +16,7 @@ function seeded(seed){let n=seed>>>0;return ()=>{n=(Math.imul(n,1664525)+1013904
 const room='A3B6C9';
 function makeGame(){const g=createGame('甲',seeded(77));joinGame(g,'乙');joinGame(g,'丙');g.id=room;return g;}
 const shots=[];
-function save(name,g,p,view='action',caption=''){
+function save(name,g,p,view='table',caption=''){
  const state=JSON.parse(JSON.stringify(publicView(g,p)));
  shots.push({name,state,view,caption,phase:g.phase,turn:state.turn});
 }
@@ -25,51 +25,57 @@ const lobby=makeGame();
 save('01-lobby',lobby,lobby.players[0],'table','3 人入席与开局');
 startGame(lobby,lobby.players[0]);
 const host=lobby.players[lobby.host];
-save('02-select',lobby,host,'action','起始玩家背面选择心仪卡、拍卖模式与方向');
+save('02-select',lobby,host,'table','起始玩家背面选择心仪卡、拍卖模式与方向');
 act(lobby,host,{kind:'choose',position:1,mode:'open',direction:1});
-save('03-pre-auction',lobby,host,'action','第 1 张翻面前的出售窗口');
+save('03-pre-auction',lobby,host,'table','第 1 张翻面前的出售窗口');
 auction(lobby);
-save('04-open',lobby,lobby.players.find(p=>p.id===lobby.auction.order[lobby.auction.actorIndex]),'action','明拍出价与实付区间');
+save('04-open',lobby,lobby.players.find(p=>p.id===lobby.auction.order[lobby.auction.actorIndex]),'table','明拍首个报价与实付区间');
 const first=lobby.players.find(p=>p.id===lobby.auction.order[lobby.auction.actorIndex]);
 act(lobby,first,{kind:'bid',amount:Math.max(5,lobby.auction.card.base/2)});
+save('04b-open-leading',lobby,lobby.players.find(p=>p.id===lobby.auction.order[lobby.auction.actorIndex]),'table','明拍当前最高价、领先者与三人状态');
+const second=lobby.players.find(p=>p.id===lobby.auction.order[lobby.auction.actorIndex]);
+act(lobby,second,{kind:'pass'});
+save('04c-open-passed',lobby,lobby.players.find(p=>p.id===lobby.auction.order[lobby.auction.actorIndex]),'table','一人退出后的明拍玩家状态');
 while(lobby.phase==='open'){
  const current=lobby.players.find(p=>p.id===lobby.auction.order[lobby.auction.actorIndex]);
  act(lobby,current,{kind:'pass'});
 }
-save('05-settlement',lobby,first,'action','落槌后的结算单与下一张出售窗口');
-save('05b-sale-confirm',lobby,first,'action','卖给拍卖行前的金额确认弹窗');
+save('05-settlement',lobby,first,'table','落槌后的结算单与下一张出售窗口');
+save('05b-sale-confirm',lobby,first,'table','卖给拍卖行前的金额确认弹窗');
 auction(lobby);
-save('06-sealed',lobby,lobby.players.find(p=>lobby.auction.bidders.includes(p.id)),'action','暗拍密封报价');
+save('06-sealed',lobby,lobby.players.find(p=>lobby.auction.bidders.includes(p.id)),'table','暗拍密封报价');
 for(const p of [...lobby.players])act(lobby,p,{kind:'sealedBid',amount:10});
-save('07-tie',lobby,lobby.players[0],'action','最高价并列后的重拍');
+save('07-tie',lobby,lobby.players[0],'table','最高价并列后的重拍');
 for(const pid of [...lobby.auction.bidders])act(lobby,lobby.players.find(p=>p.id===pid),{kind:'sealedBid',amount:0});
-save('08-request',lobby,host,'action','两张正式拍卖结束后发起求购');
+save('08-request',lobby,host,'table','两张正式拍卖结束后发起求购');
 const seller=lobby.players.find(p=>p.id!==host.id);
 const other=lobby.players.find(p=>p.id!==host.id&&p.id!==seller.id);
 const wanted=lobby.deck.find(c=>!c.red)||deckFor(lobby.eras).find(c=>!c.red);
 lobby.deck=lobby.deck.filter(c=>c.id!==wanted.id);
 seller.hand.push(wanted);
 act(lobby,host,{kind:'request',wanted:wanted.name,coins:12});
-save('09-request-response',lobby,seller,'action','持卡人回应求购与红卡税预览');
+save('09-request-response',lobby,seller,'table','持卡人回应求购与红卡税预览');
 act(lobby,seller,{kind:'respondRequest',card:wanted.id});
 act(lobby,other,{kind:'respondRequest'});
-save('10-request-choice',lobby,host,'action','起始玩家选择求购对象或放弃');
+save('10-request-choice',lobby,host,'table','起始玩家选择求购对象或放弃');
 act(lobby,host,{kind:'chooseRequest'});
 const own=lobby.deck.find(c=>c.id!==wanted.id)||deckFor(lobby.eras).find(c=>c.id!==wanted.id);
 lobby.deck=lobby.deck.filter(c=>c.id!==own.id);
 host.hand.push(own);
-save('11-free-trade',lobby,host,'action','自由交易填写卡牌与双向金币');
+save('11-free-trade',lobby,host,'table','自由交易填写卡牌与双向金币');
 act(lobby,host,{kind:'freeTrade',card:own.id,target:seller.id,wanted:wanted.name,fromCoins:3,toCoins:5});
-save('12-trade-response',lobby,seller,'action','对方同意或拒绝自由交易');
+save('12-trade-response',lobby,seller,'table','对方同意或拒绝自由交易');
 act(lobby,seller,{kind:'respondTrade',accept:false});
 save('13-collection',lobby,host,'collection','个人藏品、时代估值与套组缺口');
-save('14-turn-end',lobby,host,'action','本轮结束与轮换');
+save('14-turn-end',lobby,host,'table','本轮结束与轮换');
 save('15-info',lobby,host,'info','房间信息、超时偏好、拍卖记录');
+act(lobby,host,{kind:'chatText',text:'第二张落槌了，下一轮见！'});
+save('15b-chat',lobby,host,'chat','围桌交流抽屉与当前桌面的关系');
 const complete=makeGame();startGame(complete,complete.players[0]);
 for(const p of complete.players)p.autoPilot=true;
 advanceBots(complete);
 if(complete.phase!=='finished')throw Error(`演示局未结束：${complete.phase}`);
-save('16-finished',complete,complete.players[0],'action','6 轮后的终局排名与逐时代计分');
+save('16-finished',complete,complete.players[0],'table','6 轮后的终局排名与逐时代计分');
 
 const map={
  '/':'web/index.html','/app.js':'web/app.js','/style.css':'web/style.css','/cloud-config.js':'web/cloud-config.js',
@@ -100,6 +106,17 @@ try{
    const bid=page.locator('#bid'),base=Number(await bid.inputValue());
    await page.locator('[data-bid-step="5"]').click();
    if(Number(await bid.inputValue())!==base+5)throw Error('明拍 +5 快捷加价没有更新报价');
+   const art=await page.locator('.auction-art .card').boundingBox(),dock=await page.locator('.auction-dock').boundingBox();
+   if(!art||art.width<195||!dock||dock.y+dock.height>810)throw Error('明拍主视觉或底部操作区超出手机布局');
+   if(await page.locator('.auction-art .card-current-name').evaluate(el=>getComputedStyle(el).display)!=='none')throw Error('卡面名称遮挡未移除');
+   await page.locator('.room-nav [data-view="chat"]').click();
+   await page.waitForTimeout(2100);
+   await page.locator('.sheet-backdrop').click({position:{x:10,y:10}});
+   if(Number(await bid.inputValue())!==base+5)throw Error('打开交流抽屉后丢失未提交的报价');
+  }
+  if(shot.name==='04b-open-leading'){
+   const visible=await page.locator('.auction-player').count();
+   if(visible!==3||!await page.locator('.auction-price').getByText('领先').count())throw Error('明拍未完整展示三人状态和领先者');
   }
   if(shot.name==='09-request-response')await page.locator('#requestCard').selectOption(wanted.id);
   if(shot.name==='10-request-choice')await page.locator('#requestTarget').selectOption(seller.id);

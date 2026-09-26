@@ -1,10 +1,10 @@
 {
   "sourceHashes": {
-    "web/game.js": "57cd119cbf6bc185548357dfa730c63bbf7de97ee19e49235c5eee487a87778e",
-    "web/app.js": "16122de95eadfe25585cc36d674888fa65c61a842d752e4659c7de804d15dbad",
-    "web/style.css": "0960055a8ce183eead1a62dc6baa215b747cc9ae9c8b531bd97390bd8dc98735",
+    "web/game.js": "9f168b31004f5cead8882f754a60de3c164d89b8e1b565cd8135039c217f255b",
+    "web/app.js": "49f28175e71b746cd6897823d7cee62de0e0087c5fdb7a5d4a29686e83ebe134",
+    "web/style.css": "bc1e0ef627f48b8d57f03fa868fa4ac4093bc14d2aec3b56e0f811cce836b62c",
     "web/catalog.js": "668fec923f234473e93eaad9428b2c38d67a73c6aeb6c0d20c023aafad54fb14",
-    "web/index.html": "4921a64f8658b5d39384acaef983b70f073048835a0207a7671d175bf77d5777",
+    "web/index.html": "b7ece01571ae992cf5293caa511542e70f86f6796ef251a4df047bb8b9f98204",
     "cloud-site/card-assets.js": "4cb7c366c1c10a2d585dfb2919b69966e462e0ac5de0e8d4be9d3c3c6ca3017b"
   },
   "shots": [
@@ -31,10 +31,24 @@
     },
     {
       "name": "04-open",
-      "caption": "明拍出价与实付区间",
+      "caption": "明拍首个报价与实付区间",
       "phase": "open",
       "turn": 1,
       "file": "product-spec-assets/04-open.png"
+    },
+    {
+      "name": "04b-open-leading",
+      "caption": "明拍当前最高价、领先者与三人状态",
+      "phase": "open",
+      "turn": 1,
+      "file": "product-spec-assets/04b-open-leading.png"
+    },
+    {
+      "name": "04c-open-passed",
+      "caption": "一人退出后的明拍玩家状态",
+      "phase": "open",
+      "turn": 1,
+      "file": "product-spec-assets/04c-open-passed.png"
     },
     {
       "name": "05-settlement",
@@ -119,6 +133,13 @@
       "phase": "turn-end",
       "turn": 1,
       "file": "product-spec-assets/15-info.png"
+    },
+    {
+      "name": "15b-chat",
+      "caption": "围桌交流抽屉与当前桌面的关系",
+      "phase": "turn-end",
+      "turn": 1,
+      "file": "product-spec-assets/15b-chat.png"
     },
     {
       "name": "16-finished",

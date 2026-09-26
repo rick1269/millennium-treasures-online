@@ -60,7 +60,7 @@ def image_block(alt: str, rel: str):
         raise FileNotFoundError(path)
     with PILImage.open(path) as pic:
         width, height = pic.size
-    max_width, max_height = 322, 635
+    max_width, max_height = 322, 520 if Path(rel).name == "08-request.png" else 635
     scale = min(max_width / width, max_height / height)
     pic = Image(str(path), width=width * scale, height=height * scale, kind="proportional")
     pic.hAlign = "CENTER"
@@ -161,7 +161,7 @@ def draw_page(canvas, doc):
     canvas.drawString(48, height - 35, "拍卖大亨 / 三人局 UI 与产品设计确认稿")
     canvas.setStrokeColor(LINE)
     canvas.line(48, 43, width - 48, 43)
-    canvas.drawString(48, 30, "当前本地实现快照 · 2026-09-25")
+    canvas.drawString(48, 30, "当前本地实现快照 · 2026-09-26")
     canvas.drawRightString(width - 48, 30, f"{doc.page}")
     canvas.restoreState()
 
