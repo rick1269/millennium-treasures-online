@@ -26,7 +26,7 @@ npm start
 
 从 `source-baseline-v2.3.1` 完整源码基线开始，Git 标签对应前后端同一份源码。查看旧版用 `git switch --detach <标签>`；要基于旧版继续修改，用 `git switch -c <新分支> <标签>`。执行 `npm ci`、`npm test` 和 `npm run build:cloud` 可复现该标签的网页。重新部署时还要用对应标签的 `npm run deploy:game` 更新 Supabase 云函数，并核对数据库迁移状态。数据库迁移不能通过 `git switch` 自动撤销；已有房间也可能与旧版规则不兼容。早于完整源码基线的 `v2.3.1` 等标签仅保存网页构建物。
 
-更新线上版本时，先在同一提交中保存源码与 GitHub Pages 根目录构建物，验证后打标签并部署对应云函数。发布用的 `cloud-public.json` 从 `cloud-public.example.json` 本地创建，不提交到 Git。
+Codex 每次提交均遵循[版本发布操作要求](docs/07-版本发布操作要求.md)：先完成本地检查和提交，再按 **数据库迁移 → 云函数 → 网页 → 线上验证** 发布，最后为该提交创建附注标签，记录完整 SHA、已应用迁移编号及验证结果。前三份 SQL 的线上结构和 CLI 迁移历史已于 2026-09-26 核对并对齐，后续发布仍要逐次复查。发布用的 `cloud-public.json` 从 `cloud-public.example.json` 本地创建，不提交到 Git。
 GitHub Actions 会在每次推送后从全新检出的仓库运行 `npm ci`、测试和网页构建，检查源码与锁文件是否足以复现发布物。
 
 ## 验证与构建
